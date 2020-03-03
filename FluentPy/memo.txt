@@ -362,5 +362,165 @@ ShortVector2d(0.09090909090909091, 0.037037037037037035) #
 Create ShortVector2d as a Vector2d subclass just to overwrite the typecode
 class attribute.
 
+In our Vector code, we’ll not need the slice.indices() method because when we get
+a slice argument we’ll delegate its handling to the _components array. But if you can’t
+count on the services of an underlying sequence, this method can be a huge time saver
 
-page 275
+
+When using reduce, it’s good practice to provide the third argument,
+reduce(function, iterable, initializer), to prevent
+this exception: TypeError: reduce() of empty sequence with
+no initial value (excellent message: explains the problem and
+how to fix it). The initializer is the value returned if the sequence
+is empty and is used as the first argument in the reducing
+loop, so it should be the identity value of the operation. As examples,
+for +, |, ^ the initializer should be 0, but for *, & it should
+be 1.
+
+
+
+The trick is that set_card knows that the deck object has an attribute named _cards,
+and _cards must be a mutable sequence. The set_card function is then attached to the
+FrenchDeck class as the __setitem__ special method. This is an example of monkey
+patching: changing a class or module at runtime, without touching the source code.
+Monkey patching is powerful, but the code that does the actual patching is very tightly
+coupled with the program to be patched, often handling private and undocumented
+parts.
+#very strange behavior compare with static type langu
+
+
+
+ABCs are meant to encapsulate very general concepts, abstractions, introduced by a
+framework—things like “a sequence” and “an exact number.” [Readers] most likely don’t
+need to write any new ABCs, just use existing ones correctly, to get 99.9% of the benefits
+without serious risk of misdesign.
+
+
+An abstract method can actually have an implementation. Even if
+it does, subclasses will still be forced to override it, but they will be
+able to invoke the abstract method with super(), adding functionality
+to it instead of implementing from scratch. See the abc
+module documentation for details on @abstractmethod usage.
+
+
+However, the abc.ABC class is new in Python 3.4, so if you are using an earlier version
+of Python—and it does not make sense to subclass another existing ABC—then you
+must use the metaclass= keyword in the class statement, pointing to abc.ABCMeta
+(not abc.ABC). In Example 11-9, we would write:
+class Tombola(metaclass=abc.ABCMeta):
+# ...
+The metaclass= keyword argument was introduced in Python 3. In Python 2, you must
+use the __metaclass__ class attribute:
+class Tombola(object): # this is Python 2!!!
+__metaclass__ = abc.ABCMeta
+
+
+When abstractmethod() is applied in combination with
+other method descriptors, it should be applied as the
+innermost decorator, …12
+
+
+Subclassing built-in types like dict or list or str directly is errorprone
+because the built-in methods mostly ignore user-defined
+overrides. Instead of subclassing the built-ins, derive your classes
+from the collections module using UserDict, UserList, and
+UserString, which are designed to be easily extended.
+
+The in-place special methods should never be implemented for
+immutable types like our Vector class. This is fairly obvious, but
+worth stating anyway.
+
+In general, if a forward infix operator method (e.g., __mul__) is
+designed to work only with operands of the same type as self, it’s
+useless to implement the corresponding reverse method (e.g.,
+__rmul__) because that, by definition, will only be invoked when
+dealing with an operand of a different type.
+
+To “support multiple traversals” it must be possible to obtain multiple independent
+iterators from the same iterable instance, and each iterator must keep its own internal
+state, so a proper implementation of the pattern requires each call to iter(my_itera
+ble) to create a new, independent, iterator. That is why we need the SentenceItera
+tor class in this example.
+
+
+def chain(*iterables):
+... for i in iterables:
+... yield from i
+...
+>>> list(chain(s, t))
+['A', 'B', 'C', 0, 1, 2]
+As you can see, yield from i replaces the inner for loop completely. The use of yield
+from in this example is correct, and the code reads better, but it seems like mere syntactic
+sugar. Besides replacing a loop, yield from creates a channel connecting the inner
+generator directly to the client of the outer generator. This channel becomes really important
+when generators are used as coroutines and not only produce but also consume
+values from the client code. Chapter 16 dives into coroutines, and has several pages
+explaining why yield from is much more than syntactic sugar
+
+
+from functools import wraps
+def coroutine(func):
+"""Decorator: primes `func` by advancing to first `yield`"""
+@wraps(func)
+def primer(*args,**kwargs):
+gen = func(*args,**kwargs)
+next(gen)
+return gen
+return primer
+The decorated generator function is replaced by this primer function which,
+when invoked, returns the primed generator.
+Call the decorated function to get a generator object.
+Prime the generator.
+Return it.
+
+
+>>> coro_avg = averager()
+>>> next(coro_avg)
+>>> coro_avg.send(10)
+>>> coro_avg.send(30)
+>>> coro_avg.send(6.5)
+>>> try:
+... coro_avg.send(None)
+... except StopIteration as exc:
+... result = exc.value
+...
+>>> result
+Result(count=3, average=15.5)
+
+
+
+>>> def gen():
+... for c in 'AB':
+... yield c
+... for i in range(1, 3):
+... yield i
+...
+>>> list(gen())
+['A', 'B', 1, 2]
+Can be written as:
+>>> def gen():
+... yield from 'AB'
+... yield from range(1, 3)
+...
+>>> list(gen())
+['A', 'B', 1, 2]
+
+
+The main point of this section is that an expression like obj.attr does not search for
+attr starting with obj. The search actually starts at obj.__class__, and only if there is
+no property named attr in the class, Python looks in the obj instance itself. This rule
+applies not only to properties but to a whole category of descriptors, the overriding
+descriptors. Further treatment of descriptors must wait for Chapter 20, where we’ll see
+that properties are in fact overriding descriptors.
+
+
+def quantity(storage_name):
+def qty_getter(instance):
+return instance.__dict__[storage_name]
+def qty_setter(instance, value):
+if value > 0:
+instance.__dict__[storage_name] = value
+else:
+raise ValueError('value must be > 0')
+return property(qty_getter, qty_setter)
+page433
